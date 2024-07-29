@@ -19,13 +19,18 @@ public class GameManager : MonoBehaviourPunCallbacks
         cardManager = FindObjectOfType<CardManager>();
         playerBoardManager = FindObjectOfType<PlayerBoardManager>();
     }
+    public void ReloadScene()
+    {
+        Scene currentScene = SceneManager.GetActiveScene();
+        SceneManager.LoadScene(currentScene.name);
+    }
     public void GameReset()
     {
         if (PhotonNetwork.IsConnected)
         {
             InitializePlayers();
             StartCoroutine(cardManager.ResetCards());
-            playerBoardManager.InitializePlayerBoards();
+            //playerBoardManager.InitializePlayerBoards();
         }
     }
 

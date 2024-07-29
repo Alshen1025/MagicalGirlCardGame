@@ -4,22 +4,21 @@ using UnityEngine;
 using DG.Tweening;
 using Photon.Pun;
 using Photon.Realtime;
+
 public class CardManager : MonoBehaviour
 {
-
     public Transform DEdeckPosition; // 카드가 모일 덱 위치
     public Transform CdeckPosition;
-    public Transform DMdeckPosition; 
-    public Transform EdeckPosition; 
+    public Transform DMdeckPosition;
+    public Transform EdeckPosition;
     public Transform IdeckPosition;
-    public Transform MCdeckPosition; 
-    public Transform MdeckPosition; 
-    public Transform QdeckPosition; 
-    
-    public float randomMoveDuration = 2f; // 랜덤 위치로 이동하는 시간
-    public float moveToDeckDuration = 2f; // 덱 위치로 이동하는 시간
-    public Vector2 randomPositionRange = new Vector2(8f, 8f); // 랜덤 위치의 범위
-    public float moveToHandDuration = 2f;
+    public Transform MCdeckPosition;
+    public Transform MdeckPosition;
+    public Transform QdeckPosition;
+
+    public float randomMoveDuration = 1f; // 랜덤 위치로 이동하는 시간
+    public float moveToDeckDuration = 1f; // 덱 위치로 이동하는 시간
+    public float moveToHandDuration = 1f;
     public Transform[] DEcardPositions;
     public Transform[] CcardPositions;
     public Transform[] DMcardPositions;
@@ -29,7 +28,7 @@ public class CardManager : MonoBehaviour
     public Transform[] McardPositions;
     public Transform[] QcardPositions;
 
-    private List<Card> DEcards = new List<Card>(); 
+    private List<Card> DEcards = new List<Card>(); //카드 덱 숫자
     public GameObject[] DEcardPrefabs;
     private List<Card> Ccards = new List<Card>();
     public GameObject[] CcardPrefabs;
@@ -46,23 +45,16 @@ public class CardManager : MonoBehaviour
     private List<Card> Qcards = new List<Card>();
     public GameObject[] QcardPrefabs;
 
-    // void Start()
-    // {
-    //     if (PhotonNetwork.IsConnected)
-    //     {
-    //         StartCoroutine(ResetCards());
-    //     }
-    // }
-
     public IEnumerator ResetCards()
     {
-        yield return StartCoroutine(MoveToDeck(Ecards, EdeckPosition, EcardPositions,EcardPrefabs));
-        yield return StartCoroutine(MoveToDeck(Mcards, MdeckPosition, McardPositions,McardPrefabs));
-        yield return StartCoroutine(MoveToDeck(Icards, IdeckPosition, IcardPositions,IcardPrefabs));
-        yield return StartCoroutine(MoveToDeck(MCcards, MCdeckPosition, MCcardPositions,MCcardPrefabs));
-        yield return StartCoroutine(MoveToDeck(Qcards, QdeckPosition, QcardPositions,QcardPrefabs));
+        yield return StartCoroutine(MoveToDeck(Ecards, EdeckPosition, EcardPositions, EcardPrefabs));
+        yield return StartCoroutine(MoveToDeck(Mcards, MdeckPosition, McardPositions, McardPrefabs));
+        yield return StartCoroutine(MoveToDeck(Icards, IdeckPosition, IcardPositions, IcardPrefabs));
+        yield return StartCoroutine(MoveToDeck(MCcards, MCdeckPosition, MCcardPositions, MCcardPrefabs));
+        yield return StartCoroutine(MoveToDeck(Qcards, QdeckPosition, QcardPositions, QcardPrefabs));
     }
-    void GenerateCards(List<Card> cards, GameObject[] prefabs,Transform deckPosition)
+
+    void GenerateCards(List<Card> cards, GameObject[] prefabs, Transform deckPosition)
     {
         foreach (GameObject prefab in prefabs)
         {
@@ -71,7 +63,6 @@ public class CardManager : MonoBehaviour
             cards.Add(cardObject.GetComponent<Card>());
         }
     }
-
     Vector3 RandomPosition()
     {
     // 카메라의 뷰포트 크기 가져오기
@@ -85,7 +76,8 @@ public class CardManager : MonoBehaviour
         Random.Range(min.y, max.y),
         0
     );
-}
+    }
+
     private IEnumerator MoveToDeck(List<Card> cards, Transform deckPosition,Transform[] Cardpositions, GameObject[] prefabs)
     {
         GenerateCards(cards, prefabs,deckPosition);
@@ -130,8 +122,10 @@ public class CardManager : MonoBehaviour
             card.transform.DOMove(positions[i].position, moveToHandDuration).SetEase(Ease.InOutQuad)
                 .OnComplete(() => StartCoroutine(FlipCardWithDelay(card)));
             card.SetCard(true);
+            card.IsInField = true;
         }
     }
+
     private void ShuffleCards<T>(List<T> list)
     {
         for (int i = list.Count - 1; i > 0; i--)
@@ -147,5 +141,55 @@ public class CardManager : MonoBehaviour
     {
         yield return new WaitForSeconds(1f); // 1초 대기
         card.Flip();
+    }
+
+    public void RemoveCardFromField(Card card)
+    {
+        if (Ecards.Contains(card))
+        {
+            int cardIndex = Ecards.IndexOf(card);
+            Ecards.Remove(card);
+            AddCardToField(Ecards, EcardPositions[cardIndex]);
+        }
+        // 다른 덱에 대해서도 동일한 처리
+        if (Mcards.Contains(card))
+        {
+            int cardIndex = Mcards.IndexOf(card);
+            Mcards.Remove(card);
+            AddCardToField(Mcards, McardPositions[cardIndex]);
+        }
+        if (Icards.Contains(card))
+        {
+            int cardIndex = Icards.IndexOf(card);
+            Icards.Remove(card);
+            AddCardToField(Icards, IcardPositions[cardIndex]);
+        }
+        if (MCcards.Contains(card))
+        {
+            int cardIndex = MCcards.IndexOf(card);
+            MCcards.Remove(card);
+            AddCardToField(MCcards, MCcardPositions[cardIndex]);
+        }
+        if (Qcards.Contains(card))
+        {
+            int cardIndex = Qcards.IndexOf(card);
+            Qcards.Remove(card);
+            AddCardToField(Qcards, QcardPositions[cardIndex]);
+        }
+        // 다른 덱에 대해서도 동일한 처리
+    }
+
+    private void AddCardToField(List<Card> deck, Transform position)
+    {
+        if (deck.Count > 0)
+        {
+            Card cardToMove = deck[Random.Range(0, deck.Count)];
+            cardToMove.transform.position = position.position;
+            cardToMove.transform.localScale = new Vector3(0.08f, 0.08f, 1f);
+            cardToMove.transform.DOMove(position.position, randomMoveDuration).SetEase(Ease.InOutQuad);
+            cardToMove.Flip();
+            cardToMove.SetCard(true);
+            cardToMove.IsInField = true;
+        }
     }
 }

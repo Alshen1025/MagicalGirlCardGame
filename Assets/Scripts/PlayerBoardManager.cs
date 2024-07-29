@@ -2,58 +2,41 @@ using Photon.Pun;
 using Photon.Realtime;
 using System.Collections.Generic;
 using UnityEngine;
+using DG.Tweening;
 
 public class PlayerBoardManager : MonoBehaviourPunCallbacks
 {
-    public GameObject playerBoardPrefab; // 플레이어 보드 프리팹
-    public Transform[] boardPositions; // 플레이어 보드 위치 배열 (최대 4개)
-    private List<GameObject> playerBoards = new List<GameObject>(); // 생성된 플레이어 보드 리스트
+    public GameObject Board; // UI 요소를 참조합니다.
+    public KeyCode toggleKey = KeyCode.E; // UI를 토글할 키를 지정합니다.
+    private bool isVisible = true; // UI 요소의 현재 상태를 추적합니다.
+    private CardManager cardManager;
 
-    // void Start()
-    // {
-    //     // if (PhotonNetwork.IsConnected)
-    //     // {
-    //     //     InitializePlayerBoards();
-    //     // }
-    // }
-
-    public void InitializePlayerBoards()
+    void Start()
     {
-        for (int i = 0; i < PhotonNetwork.PlayerList.Length; i++)
-        {
-            GameObject board = PhotonNetwork.Instantiate(playerBoardPrefab.name, boardPositions[i].position, Quaternion.identity);
-            playerBoards.Add(board);
+        cardManager = FindObjectOfType<CardManager>();
+    }
 
-            if (PhotonNetwork.PlayerList[i] == PhotonNetwork.LocalPlayer)
-            {
-                // 로컬 플레이어 보드 설정
-                PlayerBoard localBoard = board.GetComponent<PlayerBoard>();
-                localBoard.SetAsLocalPlayer();
-            }
-        }
-
-        // 빈 보드를 생성하여 남은 위치에 추가
-        for (int i = PhotonNetwork.PlayerList.Length; i < boardPositions.Length; i++)
+    void Update()
+    {
+        // 특정 키가 눌렸는지 확인합니다.
+        if (Input.GetKeyDown(toggleKey))
         {
-            GameObject board = Instantiate(playerBoardPrefab, boardPositions[i].position, Quaternion.identity);
-            playerBoards.Add(board);
-            board.SetActive(false); // 플레이어가 없는 보드는 비활성화
+            ToggleVisibility();
         }
     }
 
-    public override void OnPlayerEnteredRoom(Player newPlayer)
+    void ToggleVisibility()
     {
-        // 새로운 플레이어가 들어오면 보드를 추가
-        int playerIndex = PhotonNetwork.PlayerList.Length - 1;
-        GameObject board = PhotonNetwork.Instantiate(playerBoardPrefab.name, boardPositions[playerIndex].position, Quaternion.identity);
-        playerBoards.Add(board);
+        // UI 요소의 활성화 상태를 토글합니다.
+        if(isVisible)
+        {
+            Board.SetActive(true);
+        }
+        else
+        {
+            Board.SetActive(false);
+        }
+        isVisible = !isVisible;
     }
 
-    public override void OnPlayerLeftRoom(Player otherPlayer)
-    {
-        // 플레이어가 나가면 보드를 제거
-        int playerIndex = System.Array.IndexOf(PhotonNetwork.PlayerList, otherPlayer);
-        Destroy(playerBoards[playerIndex]);
-        playerBoards.RemoveAt(playerIndex);
-    }
 }

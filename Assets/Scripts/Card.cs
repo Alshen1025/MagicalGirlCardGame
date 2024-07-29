@@ -6,14 +6,20 @@ public class Card : MonoBehaviour
     public Sprite front;
     public Sprite back;
     private SpriteRenderer spriteRenderer;
+    private BoxCollider2D boxCollider;
     [SerializeField]
-    private bool isSet = false;
+    public bool isSet = false;
     private bool isFront = false;
+    public bool IsInField { get; set; }
+    public bool isBoard = false;
 
     void Start()
     {
         spriteRenderer = GetComponent<SpriteRenderer>();
+        boxCollider = GetComponent<BoxCollider2D>();
         ShowBack();
+        Vector2 spriteSize = spriteRenderer.size;
+        boxCollider.size = spriteSize;
     }
     public void SetCard(bool value)
     {
@@ -58,6 +64,4 @@ public class Card : MonoBehaviour
 
     isFront = !isFront;
     }
-
-    // 앞면을 표시하는 메서드
 }
